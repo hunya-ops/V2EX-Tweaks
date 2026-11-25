@@ -14,6 +14,8 @@ V2EX 体验增强用户脚本集合，兼容 Tampermonkey、Violentmonkey 等主
     - **Imgur**：默认匿名上传，可选填写自己的 `Client-ID`。
     - **Catbox.moe**：免注册匿名上传，可选填写 `User Hash`。
     - **ImgURL**：支持 API v3（Bearer Token）与 API v2（UID + Token），支持自定义自建服务地址与相册 ID。
+- **屏蔽 PRO 推广广告**
+  - 自动隐藏 `#pro-campaign-container` 推广广告区域及其独占的外层卡片与间距，兼容动态插入内容。
 - **独立开关与主题适配**
   - 通过油猴扩展菜单可单独开启或关闭各项功能，提示条与配置弹窗自动适配亮色与夜间主题。
 
@@ -31,6 +33,7 @@ V2EX 体验增强用户脚本集合，兼容 Tampermonkey、Violentmonkey 等主
 - `🎯 立即检查 / 手动签到`：立即检查今日签到状态并尝试领取。
 - `✅ / ⬜ 粘贴图片自动上传`：开启或关闭剪贴板图片上传。
 - `🖼️ 图床设置`：切换图床及填写相应配置。
+- `✅ / ⬜ 屏蔽 PRO 推广广告`：开启或关闭 PRO 推广广告屏蔽。
 
 > 若默认 Imgur 图床因网络环境受限或公共配额触发 `429` 限流，请在「图床设置」中切换为 **Catbox.moe**，或填写你自己的 Imgur `Client-ID` / ImgURL 配置。
 

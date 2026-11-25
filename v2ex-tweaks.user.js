@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         v2ex-tweaks
 // @namespace    https://github.com/hunya-ops/V2EX-Tweaks
-// @version      0.2.0
-// @description  V2EX 体验增强脚本集合（每日自动签到、粘贴图片自动上传）
+// @version      0.3.0
+// @description  V2EX 体验增强脚本集合（每日自动签到、粘贴图片自动上传、屏蔽 PRO 推广广告）
 // @author       hunya-ops
 // @license      MIT
 // @homepageURL  https://github.com/hunya-ops/V2EX-Tweaks
@@ -1185,6 +1185,135 @@
     };
 
     registerFeature(pasteImageUploadFeature);
+
+    /* =========================================================================
+     * 功能 3：屏蔽 PRO 推广广告 (hideProCampaign)
+     * 隐藏 #pro-campaign-container 及其独占的外层卡片和相邻间距
+     * ========================================================================= */
+
+    const hideProCampaignFeature = {
+        id: 'hideProCampaign',
+        name: '屏蔽 PRO 推广广告',
+        defaultEnabled: true,
+
+        TARGET_ID: 'pro-campaign-container',
+        STYLE_ID: 'v2ex-tweaks-hide-pro-campaign-style',
+        HIDDEN_ATTR: 'data-v2ex-tweaks-hidden',
+        HIDDEN_VALUE: 'pro-campaign',
+        NON_VISUAL_TAGS: new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT']),
+
+        observer: null,
+
+        injectStyle() {
+            if (document.getElementById(this.STYLE_ID)) return;
+
+            const style = document.createElement('style');
+            style.id = this.STYLE_ID;
+            style.textContent = [
+                `#${this.TARGET_ID},`,
+                `#${this.TARGET_ID} + .sep20,`,
+                `[${this.HIDDEN_ATTR}="${this.HIDDEN_VALUE}"],`,
+                `[${this.HIDDEN_ATTR}="${this.HIDDEN_VALUE}"] + .sep20 {`,
+                '    display: none !important;',
+                '}',
+            ].join('\n');
+
+            (document.head || document.documentElement)?.appendChild(style);
+        },
+
+        isExclusiveWrapper(target, ancestor) {
+            let node = target;
+            while (node && node !== ancestor) {
+                const parent = node.parentElement;
+                if (!parent) return false;
+
+                for (const child of parent.childNodes) {
+                    if (child === node) continue;
+                    if (child.nodeType === 1 && !this.NON_VISUAL_TAGS.has(child.tagName)) {
+                        return false;
+                    }
+                    if (child.nodeType === 3 && child.textContent.trim() !== '') {
+                        return false;
+                    }
+                }
+                node = parent;
+            }
+            return node === ancestor;
+        },
+
+        hideElement(el) {
+            if (!el) return;
+            if (el.getAttribute(this.HIDDEN_ATTR) !== this.HIDDEN_VALUE) {
+                el.setAttribute(this.HIDDEN_ATTR, this.HIDDEN_VALUE);
+            }
+            if (
+                el.style.getPropertyValue('display') !== 'none' ||
+                el.style.getPropertyPriority('display') !== 'important'
+            ) {
+                el.style.setProperty('display', 'none', 'important');
+            }
+        },
+
+        containsTarget(node) {
+            if (!node || node.nodeType !== 1) return false;
+            return (
+                node.id === this.TARGET_ID ||
+                Boolean(node.querySelector?.(`[id="${this.TARGET_ID}"]`))
+            );
+        },
+
+        hideProCampaign() {
+            if (!document.getElementById(this.TARGET_ID)) return false;
+
+            const containers = document.querySelectorAll(`[id="${this.TARGET_ID}"]`);
+            for (const container of containers) {
+                const box = container.closest('.box');
+                const targetBlock =
+                    box && box !== container && this.isExclusiveWrapper(container, box)
+                        ? box
+                        : container;
+
+                this.hideElement(container);
+                if (targetBlock !== container) {
+                    this.hideElement(targetBlock);
+                }
+
+                if (targetBlock.nextElementSibling?.classList.contains('sep20')) {
+                    this.hideElement(targetBlock.nextElementSibling);
+                }
+            }
+
+            return true;
+        },
+
+        observeDom() {
+            if (this.observer || typeof MutationObserver !== 'function') return;
+
+            const root = document.body || document.documentElement;
+            if (!root) return;
+
+            this.observer = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    for (const added of mutation.addedNodes) {
+                        if (this.containsTarget(added)) {
+                            this.hideProCampaign();
+                            return;
+                        }
+                    }
+                }
+            });
+
+            this.observer.observe(root, { childList: true, subtree: true });
+        },
+
+        init() {
+            this.injectStyle();
+            this.hideProCampaign();
+            this.observeDom();
+        },
+    };
+
+    registerFeature(hideProCampaignFeature);
 
     /* =========================================================================
      * 启动脚本 (Bootstrap)
